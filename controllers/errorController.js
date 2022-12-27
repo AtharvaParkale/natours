@@ -14,11 +14,16 @@ const handleCastErrorDB = (err) => {
 const handleValidationErrorDB = (err) => {
   const errors = Object.values(err.errors).map((el) => el.message);
 
-
   const message = `Invalid Input data. ${errors.join('. ')}`;
 
   return AppError(message, 400);
 };
+
+const handleJWTError = () =>
+  new AppError('Invalid token please login again', 401);
+
+const handleJWTExpiredError = () =>
+  new AppError('Your token has expired !', 401);
 
 const sendErrorDev = (err, res) => {
   res.status(err.statusCode).json({
@@ -31,7 +36,7 @@ const sendErrorDev = (err, res) => {
 
 //WHEN WE LAUNCH OOUR APP ON HEROKU THIS MESSAGE WILL BE SHOWN
 const sendErrorProd = (err, res) => {
-  console.error('ERROR ❌', err);
+  // console.error('ERROR ❌', err);
 
   if (err.isOperational) {
     res.status(err.statusCode).json({
@@ -61,6 +66,9 @@ module.exports = (err, req, res, next) => {
     // if (error.code === 11000) error = handleDuplicateFieldDB(error);
     if (error.name === 'ValidationError')
       error = handleValidationErrorDB(error);
+    if (error.name === 'JsonWebTokenError') error = handleJWTError();
     sendErrorProd(err, res);
+
+    if (error.name === 'TokenExpiredError') error = handleJWTExpiredError();
   }
 };

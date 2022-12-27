@@ -1,5 +1,6 @@
 const express = require('express');
 const tourController = require('../controllers/tourControllers');
+const authController = require('../controllers/authController');
 
 const router = express.Router();
 
@@ -12,13 +13,23 @@ router.route('/monthly-plan/:year').get(tourController.getMonthlyPlan);
 
 router
   .route('/')
-  .get(tourController.getAllTours)
+  //AUTH CONTROLLER RUNS BEFORE GETTING ALL TOURS
+  //AUTH CONTROLLER CHECKS IF THE USER HAS THE ACCESS TO THE GETALL TOURS ROUTES
+
+  .get(authController.protect, tourController.getAllTours)
   .post(tourController.createTour);
 
 router
   .route('/:id')
   .get(tourController.getTour)
   .patch(tourController.updateTour)
-  .delete(tourController.deleteTour);
+  //MIDDLEWARE USED FOR AUTHENTICATION
+  //authController.protect middleware used to check if the user is logged in
+  //authController.restrictTo used for authorization
+  .delete(
+    authController.protect,
+    authController.restrictTo('admin','lead-guide'),
+    tourController.deleteTour
+  );
 
 module.exports = router;
