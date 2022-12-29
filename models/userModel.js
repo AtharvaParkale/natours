@@ -50,6 +50,12 @@ const userSchema = new mongoose.Schema({
   passwordResetToken: String,
 
   passwordResetExpires: Date,
+
+  active: {
+    type: Boolean,
+    default: true,
+    select: false,
+  },
 });
 
 //BETWEEN THE MOMENT WE RECEIVE THE DATA AND SAVE INTO THE DATABASE
@@ -64,6 +70,23 @@ userSchema.pre('save', async function (next) {
 
   //DELETE PASSWORD CONFIRM FIELD
   this.passwordConfirm = undefined;
+  next();
+});
+
+//CHANGE THE PASSWORDCHANGEDAT AFTER THE RESET OF YOUR PASSWORD
+userSchema.pre('save', function (next) {
+  if (!this.isModified('password') || this.isNew) return next();
+
+  this.passwordChangedAt = Date.now() - 1000;
+
+  next();
+});
+
+//THIS MIDDLEWARE WILL BE EXECUTED BEFORE THE GETALL USERS CONTROLLER
+//ONLY THE QUERIES WHERE ACTIVE IS TRUE WILL BE SHOWN
+userSchema.pre(/^find/, function (next) {
+  //THIS  POINTS TO THE CURRENT QUERY
+  this.find({ active: { $ne: false } });
   next();
 });
 
